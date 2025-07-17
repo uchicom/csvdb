@@ -24,7 +24,7 @@ public class CsvService {
     }
   }
 
-  Query createQuery(CSVReader reader, String[] tokens) throws Exception {
+  public Query createQuery(CSVReader reader, String[] tokens) throws Exception {
     var header = readHeader(reader);
     header.setColumn(tokens[1]);
     var where = readWhere(header, tokens);
