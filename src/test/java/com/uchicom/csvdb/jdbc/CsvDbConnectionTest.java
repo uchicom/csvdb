@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 public class CsvDbConnectionTest extends AbstractTest {
 
   @Test
-  public void test() throws Exception {
+  public void select() throws Exception {
     Class.forName("com.uchicom.csvdb.jdbc.CsvDbDriver");
     try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
         var statement = connection.createStatement();
@@ -30,6 +30,25 @@ public class CsvDbConnectionTest extends AbstractTest {
       assertEquals("Alice", resultSet.getString(1));
       assertEquals(170, resultSet.getInt(2));
       assertEquals(Date.valueOf("2000-01-01"), resultSet.getDate(3));
+    }
+  }
+
+  @Test
+  public void insert() throws Exception {
+    Class.forName("com.uchicom.csvdb.jdbc.CsvDbDriver");
+    try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
+        var statement = connection.createStatement()) {
+      statement.execute(
+          "insert into test.csv ( id , name,birthday) values (4,'Dan', '2015-01-01')");
+    }
+  }
+
+  @Test
+  public void insert2() throws Exception {
+    Class.forName("com.uchicom.csvdb.jdbc.CsvDbDriver");
+    try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
+        var statement = connection.createStatement()) {
+      statement.execute("insert into test.csv values (5,'Dan', 190, '2015-01-01')");
     }
   }
 }

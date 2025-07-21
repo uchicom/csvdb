@@ -18,7 +18,7 @@ public class Header {
 
   public void setColumn(String columns) {
     this.columns = columns;
-    splitedColumn = columns.split(",");
+    splitedColumn = columns.split(" *, *");
     columnIndexes = new int[splitedColumn.length];
     for (int i = 0; i < splitedColumn.length; i++) {
       columnIndexes[i] = getColumnIndex(splitedColumn[i]);

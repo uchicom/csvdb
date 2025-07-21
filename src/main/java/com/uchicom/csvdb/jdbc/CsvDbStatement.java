@@ -3,6 +3,7 @@ package com.uchicom.csvdb.jdbc;
 
 import com.uchicom.csvdb.service.CsvService;
 import com.uchicom.csve.util.CSVReader;
+import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -176,7 +177,22 @@ public class CsvDbStatement implements Statement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    return false;
+    if (sql.startsWith("insert")) {
+      var tokens = sql.split(" *\\( *| *\\) *|(?<!,) (?!,)", 0);
+      if (tokens.length < 5) {
+        throw new SQLSyntaxErrorException("Invalid SQL Syntax.");
+      }
+      var filePath = connection.databaseName + "/" + tokens[2];
+      try (var csvReader = new CSVReader(filePath, "UTF-8");
+          var writer = new FileWriter(filePath, true)) {
+        new CsvService().insert(csvReader, writer, tokens);
+        return true;
+      } catch (Exception e) {
+        throw new SQLException(e);
+      }
+    } else {
+      throw new SQLSyntaxErrorException("SQL文が不正です。");
+    }
   }
 
   /* (非 Javadoc)

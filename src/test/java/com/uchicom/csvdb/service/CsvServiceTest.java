@@ -215,7 +215,7 @@ public class CsvServiceTest extends AbstractTest {
 
     // assert
     assertThat(result).isEqualTo(line1);
-    assertThat(columnSizeCaptor.getValue()).isEqualTo(16);
+    assertThat(columnSizeCaptor.getValue()).isEqualTo(1);
     assertThat(isForceSizeFixCaptor.getValue()).isTrue();
   }
 
