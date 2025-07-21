@@ -8,6 +8,7 @@ import com.uchicom.csve.util.CSVReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -76,10 +77,43 @@ public class CsvService {
   }
 
   String[] getSplitedCsvRecord(CSVReader reader) throws IOException {
-    return reader.getNextCsvLine(16, true);
+    return reader.getNextCsvLine(1, true);
   }
 
   String[] getSplitedCsvRecord(CSVReader reader, int columnSize) throws IOException {
     return reader.getNextCsvLine(columnSize, false);
+  }
+
+  public void insert(CSVReader csvReader, FileWriter fileWriter, String[] tokens) throws Exception {
+    var header = readHeader(csvReader);
+    csvReader.close();
+    if (tokens.length == 6) {
+      header.setColumn(tokens[3]);
+      var selectColumnIndexs = header.getSelectColumnIndexes();
+      var data = tokens[5].split(" *, *");
+      for (var i = 0; i < header.length(); i++) {
+        if (i > 0) {
+          fileWriter.append(',');
+        }
+        for (var j = 0; j < selectColumnIndexs.length; j++) {
+          if (selectColumnIndexs[j] == i) {
+            fileWriter.append(
+                data[j].startsWith("'") ? data[j].substring(1, data[j].length() - 1) : data[j]);
+            break;
+          }
+        }
+      }
+    } else {
+      var data = tokens[4].split(" *, *");
+      for (var i = 0; i < header.length(); i++) {
+        if (i > 0) {
+          fileWriter.append(',');
+        }
+        fileWriter.append(
+            data[i].startsWith("'") ? data[i].substring(1, data[i].length() - 1) : data[i]);
+      }
+    }
+    fileWriter.append("\n");
+    fileWriter.flush();
   }
 }
