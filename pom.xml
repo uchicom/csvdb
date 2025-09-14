@@ -17,7 +17,7 @@
     <dependency>
       <groupId>com.uchicom</groupId>
       <artifactId>csve</artifactId>
-      <version>1.1.0</version>
+      <version>1.3.0</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
@@ -227,8 +227,8 @@
                 <include>*.md</include>
                 <include>.gitignore</include>
               </includes>
-              <trimTrailingWhitespace></trimTrailingWhitespace>
-              <endWithNewline></endWithNewline>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
               <indent>
                 <tabs>true</tabs>
                 <spacesPerTab>4</spacesPerTab>
@@ -239,8 +239,8 @@
                 <include>www/index.html</include>
                 <include>www/**/*.htm</include>
               </includes>
-              <trimTrailingWhitespace></trimTrailingWhitespace>
-              <endWithNewline></endWithNewline>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
               <indent>
                 <spaces>true</spaces>
                 <spacesPerTab>2</spacesPerTab>
@@ -252,8 +252,8 @@
               <include>src/main/java/**/*.java</include>
               <include>src/test/java/**/*.java</include>
             </includes>
-            <importOrder></importOrder>
-            <removeUnusedImports></removeUnusedImports>
+            <importOrder/>
+            <removeUnusedImports/>
             <googleJavaFormat>
               <version>1.17.0</version>
               <style>GOOGLE</style>
@@ -267,7 +267,7 @@
             <includes>
               <include>pom.xml</include>
             </includes>
-            <sortPom></sortPom>
+            <sortPom/>
           </pom>
         </configuration>
         <executions>
@@ -288,8 +288,8 @@
               <goal>java</goal>
             </goals>
             <configuration>
-              <arguments></arguments>
-              <systemProperties></systemProperties>
+              <arguments/>
+              <systemProperties/>
             </configuration>
           </execution>
         </executions>

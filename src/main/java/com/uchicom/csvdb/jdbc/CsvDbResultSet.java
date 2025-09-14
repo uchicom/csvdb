@@ -60,6 +60,9 @@ public class CsvDbResultSet implements ResultSet {
         if (record == null) {
           return false;
         }
+        if (record[0].charAt(0) == (char) '\u007f') {
+          continue;
+        }
         if (!query.match(record)) {
           continue;
         }
