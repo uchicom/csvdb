@@ -204,6 +204,19 @@ public class CsvDbStatement implements Statement {
       } catch (Exception e) {
         throw new SQLException(e);
       }
+    } else if (sql.startsWith("update")) {
+      var tokens = sql.split(" *\\( *| *\\) *|(?<!,) (?!,)", 0);
+      if (tokens.length != 3 && tokens.length != 8) {
+        throw new SQLSyntaxErrorException("Invalid SQL Syntax.");
+      }
+      var filePath = connection.databaseName + "/" + tokens[1];
+      try (var csvReader = new CSVReader(filePath, "UTF-8");
+          var writer = new RandomAccessFile(filePath, "rw")) {
+        new CsvService().update(csvReader, writer, tokens);
+        return true;
+      } catch (Exception e) {
+        throw new SQLException(e);
+      }
     } else {
       throw new SQLSyntaxErrorException("SQL文が不正です。");
     }
