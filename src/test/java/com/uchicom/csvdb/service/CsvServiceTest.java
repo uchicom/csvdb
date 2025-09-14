@@ -223,8 +223,11 @@ public class CsvServiceTest extends AbstractTest {
   public void getSplitedCsvRecord_columnSize() throws Exception {
     // mock
     var reader = mock(CSVReader.class);
-    var line1 = new String[0];
-    doReturn(line1)
+    var splitedCsvRecord1 = new String[] {"\u007f"};
+    var splitedCsvRecord2 = new String[] {"1", "2", "3"};
+    doReturn(splitedCsvRecord1)
+        .doReturn(splitedCsvRecord2)
+        .doReturn(null)
         .when(reader)
         .getNextCsvLine(columnSizeCaptor.capture(), isForceSizeFixCaptor.capture());
 
@@ -233,7 +236,7 @@ public class CsvServiceTest extends AbstractTest {
     var result = service.getSplitedCsvRecord(reader, columnSize);
 
     // assert
-    assertThat(result).isEqualTo(line1);
+    assertThat(result).isEqualTo(splitedCsvRecord2);
     assertThat(columnSizeCaptor.getValue()).isEqualTo(columnSize);
     assertThat(isForceSizeFixCaptor.getValue()).isFalse();
   }

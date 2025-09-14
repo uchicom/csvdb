@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class CsvService {
@@ -39,6 +40,12 @@ public class CsvService {
     return new Query(header, where);
   }
 
+  public Query createUpdateQuery(CSVReader reader, String[] tokens) throws Exception {
+    var header = readHeader(reader);
+    var where = readUpdateWhere(header, tokens);
+    return new Query(header, where);
+  }
+
   Where readWhere(Header header, String[] tokens) throws Exception {
     if (tokens.length < 5) {
       return null;
@@ -51,6 +58,13 @@ public class CsvService {
       return null;
     }
     return new Where(header, Arrays.copyOfRange(tokens, 4, tokens.length));
+  }
+
+  Where readUpdateWhere(Header header, String[] tokens) throws Exception {
+    if (tokens.length < 5) {
+      return null;
+    }
+    return new Where(header, Arrays.copyOfRange(tokens, 5, tokens.length));
   }
 
   Header readHeader(CSVReader reader) throws Exception {
@@ -95,7 +109,16 @@ public class CsvService {
   }
 
   String[] getSplitedCsvRecord(CSVReader reader, int columnSize) throws IOException {
-    return reader.getNextCsvLine(columnSize, false);
+    while (true) {
+      var record = reader.getNextCsvLine(columnSize, false);
+      if (record == null) {
+        return null;
+      }
+      if (record[0].charAt(0) == (char) '\u007f') {
+        continue;
+      }
+      return record;
+    }
   }
 
   public void insert(CSVReader csvReader, FileWriter fileWriter, String[] tokens) throws Exception {
@@ -172,6 +195,56 @@ public class CsvService {
       byte[] bytes = new byte[reader.getRecordLength() - 1];
       Arrays.fill(bytes, (byte) '\u007f');
       randomAccessFile.write(bytes);
+    }
+  }
+
+  public void update(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+      throws Exception {
+    var query = createUpdateQuery(csvReader, tokens);
+    // 更新値
+    var header = query.getHeader();
+    var updateValues = new String[header.length()];
+    var setValues = tokens[3].split(",");
+    for (var setValue : setValues) {
+      var keyValue = setValue.split("=");
+      var value =
+          keyValue[1].charAt(0) == '\''
+              ? keyValue[1].substring(1, keyValue[1].length() - 1)
+              : keyValue[1];
+      updateValues[header.getColumnIndex(keyValue[0])] = value;
+    }
+    updateBody(csvReader, randomAccessFile, query, updateValues);
+  }
+
+  void updateBody(
+      CSVReader reader, RandomAccessFile randomAccessFile, Query query, String[] updateValues)
+      throws Exception {
+    var header = query.getHeader();
+    var recordLength = header.length();
+    String[] splitedCsvRecord = null;
+    var updateList = new ArrayList<String[]>();
+    while ((splitedCsvRecord = getSplitedCsvRecord(reader, recordLength)) != null) {
+      if (!query.match(splitedCsvRecord)) {
+        continue;
+      }
+      updateList.add(splitedCsvRecord);
+      // 削除
+      randomAccessFile.seek(reader.getRecordFromIndex());
+      byte[] bytes = new byte[reader.getRecordLength() - 1];
+      Arrays.fill(bytes, (byte) '\u007f');
+      randomAccessFile.write(bytes);
+    }
+    for (var record : updateList) {
+      // 追加
+      randomAccessFile.seek(randomAccessFile.length());
+      for (var i = 0; i < record.length; i++) {
+        if (i > 0) {
+          randomAccessFile.write(",".getBytes(StandardCharsets.UTF_8));
+        }
+        var value = updateValues[i] == null ? record[i] : updateValues[i];
+        randomAccessFile.write(value.getBytes(StandardCharsets.UTF_8));
+      }
+      randomAccessFile.write("\n".getBytes(StandardCharsets.UTF_8));
     }
   }
 }
