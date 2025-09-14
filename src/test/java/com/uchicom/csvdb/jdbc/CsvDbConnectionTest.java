@@ -2,6 +2,7 @@
 package com.uchicom.csvdb.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.uchicom.csvdb.AbstractTest;
@@ -30,6 +31,7 @@ public class CsvDbConnectionTest extends AbstractTest {
       assertEquals("Alice", resultSet.getString(1));
       assertEquals(170, resultSet.getInt(2));
       assertEquals(Date.valueOf("2000-01-01"), resultSet.getDate(3));
+      assertFalse(resultSet.next());
     }
   }
 
@@ -49,6 +51,15 @@ public class CsvDbConnectionTest extends AbstractTest {
     try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
         var statement = connection.createStatement()) {
       statement.execute("insert into test.csv values (5,'Dan', 190, '2015-01-01')");
+    }
+  }
+
+  @Test
+  public void delete() throws Exception {
+    Class.forName("com.uchicom.csvdb.jdbc.CsvDbDriver");
+    try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
+        var statement = connection.createStatement()) {
+      statement.execute("delete from test.csv where id = 2");
     }
   }
 }

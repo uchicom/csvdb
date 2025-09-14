@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -32,11 +33,24 @@ public class CsvService {
     return new Query(header, where);
   }
 
+  public Query createDeleteQuery(CSVReader reader, String[] tokens) throws Exception {
+    var header = readHeader(reader);
+    var where = readDeleteWhere(header, tokens);
+    return new Query(header, where);
+  }
+
   Where readWhere(Header header, String[] tokens) throws Exception {
     if (tokens.length < 5) {
       return null;
     }
     return new Where(header, Arrays.copyOfRange(tokens, 5, tokens.length));
+  }
+
+  Where readDeleteWhere(Header header, String[] tokens) throws Exception {
+    if (tokens.length < 4) {
+      return null;
+    }
+    return new Where(header, Arrays.copyOfRange(tokens, 4, tokens.length));
   }
 
   Header readHeader(CSVReader reader) throws Exception {
@@ -115,5 +129,49 @@ public class CsvService {
     }
     fileWriter.append("\n");
     fileWriter.flush();
+  }
+
+  public void delete(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+      throws Exception {
+
+    if (tokens.length == 3) {
+      // ヘッダを削除指定はいけないのでこれはだめ。
+      deleteAll(randomAccessFile);
+    } else {
+      deleteRecord(csvReader, randomAccessFile, tokens);
+    }
+  }
+
+  void deleteAll(RandomAccessFile randomAccessFile) throws IOException {
+    for (var filePointer = 0; filePointer < randomAccessFile.length(); filePointer++) {
+      randomAccessFile.seek(filePointer);
+      int bytesRead = randomAccessFile.read();
+      if (bytesRead == '\n') {
+        randomAccessFile.setLength(filePointer + 1);
+        return;
+      }
+    }
+  }
+
+  void deleteRecord(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+      throws Exception {
+    var query = createDeleteQuery(csvReader, tokens);
+    deleteBody(csvReader, randomAccessFile, query);
+  }
+
+  void deleteBody(CSVReader reader, RandomAccessFile randomAccessFile, Query query)
+      throws Exception {
+    var header = query.getHeader();
+    var recordLength = header.length();
+    String[] splitedCsvRecord = null;
+    while ((splitedCsvRecord = getSplitedCsvRecord(reader, recordLength)) != null) {
+      if (!query.match(splitedCsvRecord)) {
+        continue;
+      }
+      randomAccessFile.seek(reader.getRecordFromIndex());
+      byte[] bytes = new byte[reader.getRecordLength() - 1];
+      Arrays.fill(bytes, (byte) '\u007f');
+      randomAccessFile.write(bytes);
+    }
   }
 }
