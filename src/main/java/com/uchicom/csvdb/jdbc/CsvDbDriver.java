@@ -16,6 +16,10 @@ public class CsvDbDriver implements Driver {
 
   public static final String URL_PREFIX = "jdbc:csvdb:";
 
+  static final int MAJOR_VERSION = 0;
+
+  static final int MINOR_VERSION = 1;
+
   static {
     try {
       DriverManager.registerDriver(new CsvDbDriver());
@@ -24,17 +28,11 @@ public class CsvDbDriver implements Driver {
     }
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#connect(java.lang.String, java.util.Properties)
-   */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
     return new CsvDbConnection(url, info);
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#acceptsURL(java.lang.String)
-   */
   @Override
   public boolean acceptsURL(String url) throws SQLException {
     if (url.startsWith(URL_PREFIX)) {
@@ -43,41 +41,26 @@ public class CsvDbDriver implements Driver {
     return false;
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#getPropertyInfo(java.lang.String, java.util.Properties)
-   */
   @Override
   public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
     return null;
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#getMajorVersion()
-   */
   @Override
   public int getMajorVersion() {
-    return 0;
+    return MAJOR_VERSION;
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#getMinorVersion()
-   */
   @Override
   public int getMinorVersion() {
-    return 1;
+    return MINOR_VERSION;
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#jdbcCompliant()
-   */
   @Override
   public boolean jdbcCompliant() {
     return false;
   }
 
-  /* (非 Javadoc)
-   * @see java.sql.Driver#getParentLogger()
-   */
   @Override
   public Logger getParentLogger() throws SQLFeatureNotSupportedException {
     return logger;
