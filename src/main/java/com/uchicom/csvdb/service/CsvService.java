@@ -154,39 +154,41 @@ public class CsvService {
     fileWriter.flush();
   }
 
-  public void delete(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+  public int delete(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
       throws Exception {
 
     if (tokens.length == 3) {
       // ヘッダを削除指定はいけないのでこれはだめ。
-      deleteAll(randomAccessFile);
+      return deleteAll(randomAccessFile);
     } else {
-      deleteRecord(csvReader, randomAccessFile, tokens);
+      return deleteRecord(csvReader, randomAccessFile, tokens);
     }
   }
 
-  void deleteAll(RandomAccessFile randomAccessFile) throws IOException {
+  int deleteAll(RandomAccessFile randomAccessFile) throws IOException {
     for (var filePointer = 0; filePointer < randomAccessFile.length(); filePointer++) {
       randomAccessFile.seek(filePointer);
       int bytesRead = randomAccessFile.read();
       if (bytesRead == '\n') {
         randomAccessFile.setLength(filePointer + 1);
-        return;
+        return 0;
       }
     }
+    return 0;
   }
 
-  void deleteRecord(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+  int deleteRecord(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
       throws Exception {
     var query = createDeleteQuery(csvReader, tokens);
-    deleteBody(csvReader, randomAccessFile, query);
+    return deleteBody(csvReader, randomAccessFile, query);
   }
 
-  void deleteBody(CSVReader reader, RandomAccessFile randomAccessFile, Query query)
+  int deleteBody(CSVReader reader, RandomAccessFile randomAccessFile, Query query)
       throws Exception {
     var header = query.getHeader();
     var recordLength = header.length();
     String[] splitedCsvRecord = null;
+    var count = 0;
     while ((splitedCsvRecord = getSplitedCsvRecord(reader, recordLength)) != null) {
       if (!query.match(splitedCsvRecord)) {
         continue;
@@ -195,10 +197,12 @@ public class CsvService {
       byte[] bytes = new byte[reader.getRecordLength() - 1];
       Arrays.fill(bytes, (byte) '\u007f');
       randomAccessFile.write(bytes);
+      count++;
     }
+    return count;
   }
 
-  public void update(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
+  public int update(CSVReader csvReader, RandomAccessFile randomAccessFile, String[] tokens)
       throws Exception {
     var query = createUpdateQuery(csvReader, tokens);
     // 更新値
@@ -213,10 +217,10 @@ public class CsvService {
               : keyValue[1];
       updateValues[header.getColumnIndex(keyValue[0])] = value;
     }
-    updateBody(csvReader, randomAccessFile, query, updateValues);
+    return updateBody(csvReader, randomAccessFile, query, updateValues);
   }
 
-  void updateBody(
+  int updateBody(
       CSVReader reader, RandomAccessFile randomAccessFile, Query query, String[] updateValues)
       throws Exception {
     var header = query.getHeader();
@@ -246,5 +250,6 @@ public class CsvService {
       }
       randomAccessFile.write("\n".getBytes(StandardCharsets.UTF_8));
     }
+    return updateList.size();
   }
 }
