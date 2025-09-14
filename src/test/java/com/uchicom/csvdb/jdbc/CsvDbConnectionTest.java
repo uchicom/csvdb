@@ -41,6 +41,20 @@ public class CsvDbConnectionTest extends AbstractTest {
   }
 
   @Test
+  public void selectAll() throws Exception {
+    try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
+        var statement = connection.createStatement();
+        var resultSet = statement.executeQuery("select * from test.csv where id = 1")) {
+      assertTrue(resultSet.next());
+      assertEquals(1L, resultSet.getLong(1));
+      assertEquals("Alice", resultSet.getString(2));
+      assertEquals(170, resultSet.getInt(3));
+      assertEquals(Date.valueOf("2000-01-01"), resultSet.getDate(4));
+      assertFalse(resultSet.next());
+    }
+  }
+
+  @Test
   public void insert() throws Exception {
     try (var connection = DriverManager.getConnection("jdbc:csvdb:src/test/resources");
         var statement = connection.createStatement()) {

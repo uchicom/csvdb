@@ -3,9 +3,9 @@ package com.uchicom.csvdb.sql;
 
 public class Header {
 
-  private final String[] header;
-  private String[] splitedColumn;
-  private String columns;
+  final String[] header;
+  String[] splitedColumn;
+  String columns;
   int[] columnIndexes;
 
   public Header(String[] header) {
@@ -18,7 +18,22 @@ public class Header {
 
   public void setColumn(String columns) {
     this.columns = columns;
-    splitedColumn = columns.split(" *, *");
+    if (columns.equals("*")) {
+      setWildCardColumns();
+      return;
+    }
+    setSplitColumns();
+  }
+
+  void setWildCardColumns() {
+    columnIndexes = new int[header.length];
+    for (var i = 0; i < columnIndexes.length; i++) {
+      columnIndexes[i] = i;
+    }
+  }
+
+  void setSplitColumns() {
+    splitedColumn = columns.split(" *, *", 0);
     columnIndexes = new int[splitedColumn.length];
     for (int i = 0; i < splitedColumn.length; i++) {
       columnIndexes[i] = getColumnIndex(splitedColumn[i]);
