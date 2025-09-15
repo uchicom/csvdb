@@ -27,6 +27,17 @@ public class CsvService {
     }
   }
 
+  public void readUpdate(String csvFile, String[] tokens) throws Exception {
+
+    try (var reader = createCsvReader(csvFile)) {
+      var query = createUpdateQuery(reader, tokens);
+      query.getHeader().setColumn("*");
+      // 更新値
+      var updateValues = createUpdateValues(query, tokens);
+      readUpdateBody(reader, query, updateValues);
+    }
+  }
+
   public Query createQuery(CSVReader reader, String[] tokens) throws Exception {
     var header = readHeader(reader);
     header.setColumn(tokens[1]);
@@ -93,6 +104,48 @@ public class CsvService {
         writer.write('\n');
       }
     }
+  }
+
+  void readUpdateBody(CSVReader reader, Query query, String[] updateValues) throws Exception {
+    var header = query.getHeader();
+    try (var writer = createWriter()) {
+      writer.write(header.getColumnHeaderString());
+      writer.write('\n');
+      var recordLength = header.length();
+      String[] splitedCsvRecord = null;
+      while ((splitedCsvRecord = getSplitedCsvRecord(reader, recordLength)) != null) {
+        if (!query.match(splitedCsvRecord)) {
+          writeRecord(writer, splitedCsvRecord);
+        } else {
+          writeUpdateRecord(writer, splitedCsvRecord, updateValues);
+        }
+      }
+    }
+  }
+
+  void writeRecord(Writer writer, String[] splitedCsvRecord) throws IOException {
+    var iMax = splitedCsvRecord.length;
+    writer.write(splitedCsvRecord[0]);
+    for (int i = 1; i < iMax; i++) {
+      writer.write(',');
+      writer.write(splitedCsvRecord[i]);
+    }
+    writer.write('\n');
+  }
+
+  void writeUpdateRecord(Writer writer, String[] splitedCsvRecord, String[] updateValues)
+      throws IOException {
+    var iMax = splitedCsvRecord.length;
+    writer.write(getValue(updateValues[0], splitedCsvRecord[0]));
+    for (var i = 1; i < iMax; i++) {
+      writer.write(',');
+      writer.write(getValue(updateValues[i], splitedCsvRecord[i]));
+    }
+    writer.write('\n');
+  }
+
+  String getValue(String updateValue, String orgValue) {
+    return updateValue == null ? orgValue : updateValue;
   }
 
   Writer createWriter() {
@@ -206,6 +259,11 @@ public class CsvService {
       throws Exception {
     var query = createUpdateQuery(csvReader, tokens);
     // 更新値
+    var updateValues = createUpdateValues(query, tokens);
+    return updateBody(csvReader, randomAccessFile, query, updateValues);
+  }
+
+  String[] createUpdateValues(Query query, String[] tokens) {
     var header = query.getHeader();
     var updateValues = new String[header.length()];
     var setValues = tokens[3].split(",");
@@ -217,7 +275,7 @@ public class CsvService {
               : keyValue[1];
       updateValues[header.getColumnIndex(keyValue[0])] = value;
     }
-    return updateBody(csvReader, randomAccessFile, query, updateValues);
+    return updateValues;
   }
 
   int updateBody(

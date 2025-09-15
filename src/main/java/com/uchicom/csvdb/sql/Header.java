@@ -57,6 +57,9 @@ public class Header {
   }
 
   public String getColumnHeaderString() {
+    if ("*".equals(columns)) {
+      return String.join(",", header);
+    }
     return columns;
   }
 }

@@ -2,6 +2,7 @@
 package com.uchicom.csvdb.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -52,6 +53,18 @@ public class CsvServiceTest extends AbstractTest {
 
   @Captor ArgumentCaptor<String> printlnCaptor;
 
+  @Captor ArgumentCaptor<String[]> updateValuesCaptor;
+
+  @Captor ArgumentCaptor<String> columnsCaptor;
+
+  @Captor ArgumentCaptor<String> updateValueCaptor;
+
+  @Captor ArgumentCaptor<String> orgValueCaptor;
+
+  @Captor ArgumentCaptor<Integer> charCaptor;
+
+  @Captor ArgumentCaptor<Writer> writerCaptor;
+
   @Spy @InjectMocks CsvService service;
 
   @Test
@@ -77,6 +90,51 @@ public class CsvServiceTest extends AbstractTest {
     assertThat(csvReaders.get(1)).isEqualTo(reader);
     assertThat(tokensCaptor.getValue()).isEqualTo(tokens);
     assertThat(queryCaptor.getValue()).isEqualTo(query);
+  }
+
+  @Test
+  public void readUpdate() throws Exception {
+    // mock
+    var reader = mock(CSVReader.class);
+    doReturn(reader).when(service).createCsvReader(filePathCaptor.capture());
+    var query = mock(Query.class);
+    doReturn(query)
+        .when(service)
+        .createUpdateQuery(csvReaderCaptor.capture(), tokensCaptor.capture());
+    var header = mock(Header.class);
+    doReturn(header).when(query).getHeader();
+    doNothing().when(header).setColumn(columnsCaptor.capture());
+    var updateValues = new String[] {"name='namae'"};
+    doReturn(updateValues)
+        .when(service)
+        .createUpdateValues(queryCaptor.capture(), tokensCaptor.capture());
+    doNothing()
+        .when(service)
+        .readUpdateBody(
+            csvReaderCaptor.capture(), queryCaptor.capture(), updateValuesCaptor.capture());
+
+    var csvFile = "test.csv";
+    var tokens = new String[] {"select", "a,b", "where", "c", "=", "'2'"};
+
+    // test
+    service.readUpdate(csvFile, tokens);
+
+    // assert
+    assertThat(filePathCaptor.getValue()).isEqualTo(csvFile);
+    var csvReaders = csvReaderCaptor.getAllValues();
+    assertThat(csvReaders).hasSize(2);
+    assertThat(csvReaders.get(0)).isEqualTo(reader);
+    assertThat(csvReaders.get(1)).isEqualTo(reader);
+    var tokenses = tokensCaptor.getAllValues();
+    assertThat(tokenses).hasSize(2);
+    assertThat(tokenses.get(0)).isEqualTo(tokens);
+    assertThat(tokenses.get(1)).isEqualTo(tokens);
+    var querys = queryCaptor.getAllValues();
+    assertThat(querys).hasSize(2);
+    assertThat(querys.get(0)).isEqualTo(query);
+    assertThat(querys.get(1)).isEqualTo(query);
+    assertThat(columnsCaptor.getValue()).isEqualTo("*");
+    assertThat(updateValuesCaptor.getValue()).isEqualTo(updateValues);
   }
 
   @Test
@@ -179,6 +237,136 @@ public class CsvServiceTest extends AbstractTest {
     assertThat(prints.get(0)).isEqualTo("a,b");
     assertThat(prints.get(1)).isEqualTo("1");
     assertThat(prints.get(2)).isEqualTo("2");
+  }
+
+  @Test
+  public void readUpdateBody() throws Exception {
+    // mock
+    var header = mock(Header.class);
+    var query = mock(Query.class);
+    doReturn(header).when(query).getHeader();
+    var writer = mock(Writer.class);
+    doReturn(writer).when(service).createWriter();
+    doNothing().when(writer).write(printCaptor.capture());
+    doNothing().when(writer).write(charCaptor.capture());
+    var columnHeaderString = "a,b";
+    doReturn(columnHeaderString).when(header).getColumnHeaderString();
+    var length = 3;
+    doReturn(length).when(header).length();
+    var splitedCsvRecord1 = new String[] {"1", "2", "3"};
+    var splitedCsvRecord2 = new String[] {"4", "5", "6"};
+    doReturn(splitedCsvRecord1)
+        .doReturn(splitedCsvRecord2)
+        .doReturn(null)
+        .when(service)
+        .getSplitedCsvRecord(csvReaderCaptor.capture(), columnSizeCaptor.capture());
+    doNothing().when(service).writeRecord(writerCaptor.capture(), recordCaptor.capture());
+    doNothing()
+        .when(service)
+        .writeUpdateRecord(
+            writerCaptor.capture(), recordCaptor.capture(), updateValuesCaptor.capture());
+
+    doReturn(true).doReturn(false).when(query).match(recordCaptor.capture());
+
+    var reader = mock(CSVReader.class);
+    var udpateValues = new String[] {null, "c"};
+
+    // test
+    service.readUpdateBody(reader, query, udpateValues);
+
+    // assert
+    var csvReaders = csvReaderCaptor.getAllValues();
+    assertThat(csvReaders).hasSize(3);
+    assertThat(csvReaders.get(0)).isEqualTo(reader);
+    assertThat(csvReaders.get(1)).isEqualTo(reader);
+    assertThat(csvReaders.get(2)).isEqualTo(reader);
+    assertThat(columnSizeCaptor.getValue()).isEqualTo(length);
+    var prints = printCaptor.getAllValues();
+    assertThat(prints).hasSize(1);
+    assertThat(prints.get(0)).isEqualTo("a,b");
+    var chars = charCaptor.getAllValues();
+    assertThat(chars).hasSize(1);
+    assertThat(chars.get(0)).isEqualTo('\n');
+    assertThat(recordCaptor.getAllValues())
+        .containsExactly(
+            splitedCsvRecord1, splitedCsvRecord1, splitedCsvRecord2, splitedCsvRecord2);
+    assertThat(writerCaptor.getAllValues()).containsExactly(writer, writer);
+    assertThat(updateValuesCaptor.getAllValues()).containsExactly(udpateValues);
+  }
+
+  @Test
+  public void writeRecord() throws Exception {
+    // mock
+    var writer = mock(Writer.class);
+    doReturn(writer).when(service).createWriter();
+    doNothing().when(writer).write(printCaptor.capture());
+    doNothing().when(writer).write(charCaptor.capture());
+
+    var splitedCsvRecord = new String[] {"a", "b"};
+
+    // test
+    service.writeRecord(writer, splitedCsvRecord);
+
+    // assert
+    var prints = printCaptor.getAllValues();
+    assertThat(prints).hasSize(2);
+    assertThat(prints.get(0)).isEqualTo("a");
+    assertThat(prints.get(1)).isEqualTo("b");
+    var chars = charCaptor.getAllValues();
+    assertThat(chars).hasSize(2);
+    assertThat(chars.get(0)).isEqualTo(',');
+    assertThat(chars.get(1)).isEqualTo('\n');
+  }
+
+  @Test
+  public void writeUpdateRecord() throws Exception {
+    // mock
+    var writer = mock(Writer.class);
+    doReturn(writer).when(service).createWriter();
+    doNothing().when(writer).write(printCaptor.capture());
+    doNothing().when(writer).write(charCaptor.capture());
+    var updateValue = "updateValue";
+    var orgValue = "orgValue";
+    doReturn(updateValue)
+        .doReturn(orgValue)
+        .when(service)
+        .getValue(updateValueCaptor.capture(), orgValueCaptor.capture());
+
+    var splitedCsvRecord = new String[] {"a", "b"};
+    var udpateValues = new String[] {null, "c"};
+
+    // test
+    service.writeUpdateRecord(writer, splitedCsvRecord, udpateValues);
+
+    // assert
+    var prints = printCaptor.getAllValues();
+    assertThat(prints).hasSize(2);
+    assertThat(prints.get(0)).isEqualTo(updateValue);
+    assertThat(prints.get(1)).isEqualTo(orgValue);
+    var chars = charCaptor.getAllValues();
+    assertThat(chars).hasSize(2);
+    assertThat(chars.get(0)).isEqualTo(',');
+    assertThat(chars.get(1)).isEqualTo('\n');
+    var updateValues = updateValueCaptor.getAllValues();
+    assertThat(updateValues).hasSize(2);
+    assertThat(updateValues.get(0)).isNull();
+    assertThat(updateValues.get(1)).isEqualTo("c");
+    var orgValues = orgValueCaptor.getAllValues();
+    assertThat(orgValues).hasSize(2);
+    assertThat(orgValues.get(0)).isEqualTo("a");
+    assertThat(orgValues.get(1)).isEqualTo("b");
+  }
+
+  @Test
+  public void getValue() throws Exception {
+
+    // mock
+    var updateValue = "updateValue";
+    var orgValue = "orgValue";
+
+    // test and assert
+    assertEquals(orgValue, service.getValue(null, orgValue));
+    assertEquals(updateValue, service.getValue(updateValue, orgValue));
   }
 
   @Test

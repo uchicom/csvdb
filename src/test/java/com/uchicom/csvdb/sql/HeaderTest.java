@@ -115,6 +115,21 @@ public class HeaderTest extends AbstractTest {
   }
 
   @Test
+  public void getColumnHeaderString_wildCard() {
+
+    // mock
+    var headers = new String[] {"a", "b", "c"};
+    var header = new Header(headers);
+    header.columns = "*";
+
+    // test
+    var result = header.getColumnHeaderString();
+
+    // assert
+    assertEquals(result, "a,b,c");
+  }
+
+  @Test
   public void getColumnHeaderString() {
 
     // mock
