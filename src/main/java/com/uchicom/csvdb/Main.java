@@ -33,13 +33,26 @@ public class Main {
 
   void execute(String sql) throws Exception {
     var tokens = sql.split(" ", 0);
-    if (!tokens[0].equalsIgnoreCase("select")) {
+    if (tokens[0].equalsIgnoreCase("select")) {
+      select(tokens);
+    } else if (tokens[0].equalsIgnoreCase("update")) {
+      update(tokens);
+    } else {
       throw new IllegalArgumentException("Invalid SQL");
     }
+  }
+
+  void select(String[] tokens) throws Exception {
     if (tokens.length < 4) {
       throw new IllegalArgumentException("Invalid SQL");
     }
-    var csvFile = tokens[3];
-    csvService.read(csvFile, tokens);
+    csvService.read(tokens[3], tokens);
+  }
+
+  void update(String[] tokens) throws Exception {
+    if (tokens.length < 4) {
+      throw new IllegalArgumentException("Invalid SQL");
+    }
+    csvService.readUpdate(tokens[1], tokens);
   }
 }
