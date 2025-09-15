@@ -128,4 +128,35 @@ public class MainTest extends AbstractTest {
     assertEquals("test.csv", tableNameCaptor.getValue());
     assertEquals(tokens, tokensCaptor.getValue());
   }
+
+  @Test
+  public void delete_error() throws Exception {
+    // mock
+    doNothing().when(csvService).readDelete(tableNameCaptor.capture(), tokensCaptor.capture());
+
+    var tokens = new String[] {"delete", "from"};
+
+    // test
+    var e = assertThrows(IllegalArgumentException.class, () -> main.delete(tokens));
+
+    // assert
+    assertEquals("Invalid SQL", e.getMessage());
+    assertEquals(0, tableNameCaptor.getAllValues().size());
+    assertEquals(0, tokensCaptor.getAllValues().size());
+  }
+
+  @Test
+  public void delete() throws Exception {
+    // mock
+    doNothing().when(csvService).readDelete(tableNameCaptor.capture(), tokensCaptor.capture());
+
+    var tokens = new String[] {"delete", "from", "test.csv"};
+
+    // test
+    main.delete(tokens);
+
+    // assert
+    assertEquals("test.csv", tableNameCaptor.getValue());
+    assertEquals(tokens, tokensCaptor.getValue());
+  }
 }
