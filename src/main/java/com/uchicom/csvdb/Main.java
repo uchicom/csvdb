@@ -32,7 +32,7 @@ public class Main {
   }
 
   void execute(String sql) throws Exception {
-    var tokens = sql.split(" ", 0);
+    var tokens = sql.split(" +", 0);
     if (tokens[0].equalsIgnoreCase("select")) {
       select(tokens);
     } else if (tokens[0].equalsIgnoreCase("update")) {
