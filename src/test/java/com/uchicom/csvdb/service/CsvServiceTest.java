@@ -138,6 +138,41 @@ public class CsvServiceTest extends AbstractTest {
   }
 
   @Test
+  public void readDelete() throws Exception {
+    // mock
+    var reader = mock(CSVReader.class);
+    doReturn(reader).when(service).createCsvReader(filePathCaptor.capture());
+    var query = mock(Query.class);
+    doReturn(query)
+        .when(service)
+        .createDeleteQuery(csvReaderCaptor.capture(), tokensCaptor.capture());
+    var header = mock(Header.class);
+    doReturn(header).when(query).getHeader();
+    doNothing().when(header).setColumn(columnsCaptor.capture());
+    doNothing().when(service).readDeleteBody(csvReaderCaptor.capture(), queryCaptor.capture());
+
+    var csvFile = "test.csv";
+    var tokens = new String[] {"delete", "from", "table", "where", "c", "=", "'2'"};
+
+    // test
+    service.readDelete(csvFile, tokens);
+
+    // assert
+    assertThat(filePathCaptor.getValue()).isEqualTo(csvFile);
+    var csvReaders = csvReaderCaptor.getAllValues();
+    assertThat(csvReaders).hasSize(2);
+    assertThat(csvReaders.get(0)).isEqualTo(reader);
+    assertThat(csvReaders.get(1)).isEqualTo(reader);
+    var tokenses = tokensCaptor.getAllValues();
+    assertThat(tokenses).hasSize(1);
+    assertThat(tokenses.get(0)).isEqualTo(tokens);
+    var querys = queryCaptor.getAllValues();
+    assertThat(querys).hasSize(1);
+    assertThat(querys.get(0)).isEqualTo(query);
+    assertThat(columnsCaptor.getValue()).isEqualTo("*");
+  }
+
+  @Test
   public void readWhere_null() throws Exception {
     // mock
     var header = mock(Header.class);
@@ -292,6 +327,53 @@ public class CsvServiceTest extends AbstractTest {
             splitedCsvRecord1, splitedCsvRecord1, splitedCsvRecord2, splitedCsvRecord2);
     assertThat(writerCaptor.getAllValues()).containsExactly(writer, writer);
     assertThat(updateValuesCaptor.getAllValues()).containsExactly(udpateValues);
+  }
+
+  @Test
+  public void readDeleteBody() throws Exception {
+    // mock
+    var header = mock(Header.class);
+    var query = mock(Query.class);
+    doReturn(header).when(query).getHeader();
+    var writer = mock(Writer.class);
+    doReturn(writer).when(service).createWriter();
+    doNothing().when(writer).write(printCaptor.capture());
+    doNothing().when(writer).write(charCaptor.capture());
+    var columnHeaderString = "a,b";
+    doReturn(columnHeaderString).when(header).getColumnHeaderString();
+    var length = 3;
+    doReturn(length).when(header).length();
+    var splitedCsvRecord1 = new String[] {"1", "2", "3"};
+    var splitedCsvRecord2 = new String[] {"4", "5", "6"};
+    doReturn(splitedCsvRecord1)
+        .doReturn(splitedCsvRecord2)
+        .doReturn(null)
+        .when(service)
+        .getSplitedCsvRecord(csvReaderCaptor.capture(), columnSizeCaptor.capture());
+    doNothing().when(service).writeRecord(writerCaptor.capture(), recordCaptor.capture());
+    doReturn(true).doReturn(false).when(query).match(recordCaptor.capture());
+
+    var reader = mock(CSVReader.class);
+
+    // test
+    service.readDeleteBody(reader, query);
+
+    // assert
+    var csvReaders = csvReaderCaptor.getAllValues();
+    assertThat(csvReaders).hasSize(3);
+    assertThat(csvReaders.get(0)).isEqualTo(reader);
+    assertThat(csvReaders.get(1)).isEqualTo(reader);
+    assertThat(csvReaders.get(2)).isEqualTo(reader);
+    assertThat(columnSizeCaptor.getValue()).isEqualTo(length);
+    var prints = printCaptor.getAllValues();
+    assertThat(prints).hasSize(1);
+    assertThat(prints.get(0)).isEqualTo("a,b");
+    var chars = charCaptor.getAllValues();
+    assertThat(chars).hasSize(1);
+    assertThat(chars.get(0)).isEqualTo('\n');
+    assertThat(recordCaptor.getAllValues())
+        .containsExactly(splitedCsvRecord1, splitedCsvRecord2, splitedCsvRecord2);
+    assertThat(writerCaptor.getAllValues()).containsExactly(writer);
   }
 
   @Test

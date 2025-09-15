@@ -37,6 +37,8 @@ public class Main {
       select(tokens);
     } else if (tokens[0].equalsIgnoreCase("update")) {
       update(tokens);
+    } else if (tokens[0].equalsIgnoreCase("delete")) {
+      delete(tokens);
     } else {
       throw new IllegalArgumentException("Invalid SQL");
     }
@@ -54,5 +56,12 @@ public class Main {
       throw new IllegalArgumentException("Invalid SQL");
     }
     csvService.readUpdate(tokens[1], tokens);
+  }
+
+  void delete(String[] tokens) throws Exception {
+    if (tokens.length < 3) {
+      throw new IllegalArgumentException("Invalid SQL");
+    }
+    csvService.readDelete(tokens[2], tokens);
   }
 }

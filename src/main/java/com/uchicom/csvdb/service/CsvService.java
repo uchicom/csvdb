@@ -20,7 +20,6 @@ import java.util.Arrays;
 public class CsvService {
 
   public void read(String csvFile, String[] tokens) throws Exception {
-
     try (var reader = createCsvReader(csvFile)) {
       var query = createQuery(reader, tokens);
       readBody(reader, query);
@@ -28,13 +27,20 @@ public class CsvService {
   }
 
   public void readUpdate(String csvFile, String[] tokens) throws Exception {
-
     try (var reader = createCsvReader(csvFile)) {
       var query = createUpdateQuery(reader, tokens);
       query.getHeader().setColumn("*");
       // 更新値
       var updateValues = createUpdateValues(query, tokens);
       readUpdateBody(reader, query, updateValues);
+    }
+  }
+
+  public void readDelete(String csvFile, String[] tokens) throws Exception {
+    try (var reader = createCsvReader(csvFile)) {
+      var query = createDeleteQuery(reader, tokens);
+      query.getHeader().setColumn("*");
+      readDeleteBody(reader, query);
     }
   }
 
@@ -119,6 +125,22 @@ public class CsvService {
         } else {
           writeUpdateRecord(writer, splitedCsvRecord, updateValues);
         }
+      }
+    }
+  }
+
+  void readDeleteBody(CSVReader reader, Query query) throws Exception {
+    var header = query.getHeader();
+    try (var writer = createWriter()) {
+      writer.write(header.getColumnHeaderString());
+      writer.write('\n');
+      var recordLength = header.length();
+      String[] splitedCsvRecord = null;
+      while ((splitedCsvRecord = getSplitedCsvRecord(reader, recordLength)) != null) {
+        if (query.match(splitedCsvRecord)) {
+          continue;
+        }
+        writeRecord(writer, splitedCsvRecord);
       }
     }
   }
